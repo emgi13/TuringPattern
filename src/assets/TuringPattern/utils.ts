@@ -59,7 +59,6 @@ export function makeImage(
   grid: Float32Array,
   size: { width: number; height: number },
   range: { min: number; max: number },
-  invert: boolean = false,
 ): p5.Image {
   // Create an image object
   const { width, height } = size;
@@ -71,8 +70,7 @@ export function makeImage(
   // Set pixel values based on the 2D array
   for (let j = 0; j < height; j++) {
     for (let i = 0; i < width; i++) {
-      let brightness = p.map(grid[i + j * width], min, max, 0, 255);
-      if (invert) brightness = 255 - brightness;
+      const brightness = p.map(grid[i + j * width], min, max, 0, 255);
       const index = (i + j * width) * 4; // Calculate pixel index
       img.pixels[index] = brightness; // Red
       img.pixels[index + 1] = brightness; // Green

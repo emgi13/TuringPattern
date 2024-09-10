@@ -104,7 +104,6 @@ class TuringPattern extends React.Component<TuringPatternProps> {
         runner.grids[layer],
         runner.size,
         runner.range[layer],
-        this.props.invert,
       );
       // put the image on the canvas
       p.image(
@@ -117,6 +116,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       i += 1;
     }
     p.filter(p.BLUR, this.props.blurRadius);
+    if (this.props.invert) p.filter(p.INVERT);
     if (!runner.active) p.noLoop();
   }
 
