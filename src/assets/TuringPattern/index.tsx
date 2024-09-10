@@ -34,7 +34,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   constructor(props: TuringPatternProps) {
     super(props);
     this.p5ref = React.createRef();
-    this.active = true;
+    this.active = false;
 
     // binds
     this.handleScroll = this.handleScroll.bind(this);
@@ -43,7 +43,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   handleScrollDebounced() {
     clearTimeout(this.debounceTimeout);
-    this.debounceTimeout = setTimeout(this.handleScroll, 10); // Adjust the delay as needed
+    this.debounceTimeout = setTimeout(this.handleScroll, 100); // Adjust the delay as needed
   }
 
   handleScroll() {
@@ -83,7 +83,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   calcFrame() {
     // console.time("calcFrame");
     const { runner } = this.props;
-    for (let i = 0; i < this.props.frameRate; i++) {
+    for (let i = 0; i < this.props.skipFrames; i++) {
       runner.step();
     }
     // console.timeEnd("calcFrame");
@@ -128,7 +128,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       const height = ((width * size.height) / size.width) * layers;
       p.createCanvas(width, height);
       p.background(0, 0, 0, 0);
-      // p.frameRate(0);
+      p.frameRate(0);
       window.addEventListener("scroll", this.handleScrollDebounced, {
         passive: true,
       });
