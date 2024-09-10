@@ -43,16 +43,13 @@ export function getRoot(
   return x;
 }
 
-export function Laplace(
-  getter: (i: number, j: number) => number,
-  i: number,
-  j: number,
-  dx: number,
-) {
-  const sum =
-    getter(i - 1, j) + getter(i + 1, j) + getter(i, j - 1) + getter(i, j + 1);
-  return (sum - 4 * getter(i, j)) / (dx * dx);
-}
+export const Laplace =
+  (getter: (i: number, j: number) => number) =>
+    (i: number, j: number, dx: number) => {
+      const sum =
+        getter(i - 1, j) + getter(i + 1, j) + getter(i, j - 1) + getter(i, j + 1);
+      return (sum - 4 * getter(i, j)) / (dx * dx);
+    };
 
 export function findMinMax(
   matrix: number[][],

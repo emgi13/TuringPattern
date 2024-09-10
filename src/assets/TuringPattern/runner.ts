@@ -160,31 +160,18 @@ export class ActivInhibRunner implements ActivInhibProps {
         const a = this.grids.a[i][j];
         const h = this.grids.h[i][j];
 
+        const LapA = Laplace((x, y) => getPBC(this.grids.a, this.size, x, y));
+        const LapH = Laplace((x, y) => getPBC(this.grids.h, this.size, x, y));
+
         const aa =
           a +
           this.dt *
-          (va.D *
-            Laplace(
-              (x, y) => getPBC(this.grids.a, this.size, x, y),
-              i,
-              j,
-              this.dx,
-            ) +
+          (va.D * LapA(i, j, this.dx) +
             (va.r * a * a) / (1 + va.k * a * a) / h -
             va.u * a +
             va.s);
         const hh =
-          h +
-          this.dt *
-          (vh.D *
-            Laplace(
-              (x, y) => getPBC(this.grids.h, this.size, x, y),
-              i,
-              j,
-              this.dx,
-            ) +
-            vh.r * a * a -
-            vh.u * h);
+          h + this.dt * (vh.D * LapH(i, j, this.dx) + vh.r * a * a - vh.u * h);
 
         if (aa < a_min) {
           a_min = aa;
