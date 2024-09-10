@@ -59,7 +59,7 @@ export function makeImage(
   grid: Float32Array,
   size: { width: number; height: number },
   range: { min: number; max: number },
-  invert: boolean = true,
+  invert: boolean = false,
 ): p5.Image {
   // Create an image object
   const { width, height } = size;

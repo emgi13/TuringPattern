@@ -59,7 +59,7 @@ export class ActivInhibRunner implements ActivInhibProps {
   profile: boolean;
   constructor(params?: Partial<ActivInhibProps>) {
     this.flucPerc = params?.flucPerc || 7;
-    this.size = params?.size || { width: 80, height: 60 };
+    this.size = params?.size || { width: 50, height: 50 };
     this.seed = params?.seed || `${Math.random()}`;
     this.dx = params?.dx || 1;
     this.dt = params?.dt || 1;

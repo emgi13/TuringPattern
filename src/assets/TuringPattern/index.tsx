@@ -4,7 +4,7 @@ import "./styles.scss";
 import { makeImage } from "./utils";
 import { ActivInhibRunner } from "./runner";
 
-const defaultRunner = new ActivInhibRunner({ profile: true });
+const defaultRunner = new ActivInhibRunner();
 
 // INFO: interface creation
 // add specific classes for each figure,
@@ -20,8 +20,8 @@ const defaultRunner = new ActivInhibRunner({ profile: true });
 // runners for each section instead.
 class TuringPattern extends React.Component<TuringPatternProps> {
   static defaultProps: TuringPatternProps = {
-    frameRate: 12,
-    skipFrames: 40,
+    frameRate: 15,
+    skipFrames: 60,
     blurRadius: 0,
     frameScale: 0.9,
     runner: defaultRunner,
@@ -33,7 +33,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   constructor(props: TuringPatternProps) {
     super(props);
     this.p5ref = React.createRef();
-    this.active = false;
+    this.active = true;
 
     // binds
     this.handleScroll = this.handleScroll.bind(this);
