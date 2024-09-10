@@ -8,15 +8,8 @@ export const getPBC = (
   i: number,
   j: number,
 ): number => {
-  const width = grid.length;
-  const height = grid[0].length;
-  let x = i;
-  if (x < 0) x += width;
-  x %= width;
-  let y = j;
-  if (y < 0) y += height;
-  y %= height;
-  return grid[x][y];
+  const { width, height } = size;
+  return grid[(i + width) % width][(j + height) % height];
 };
 
 // INFO: Implement the Newton-Rapson method of root finding for
