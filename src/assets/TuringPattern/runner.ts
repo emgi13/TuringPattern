@@ -59,10 +59,12 @@ export class ActivInhibRunner implements ActivInhibProps {
   profile: boolean;
   stopAfter: number;
   frameNo: number;
+  active: boolean;
   constructor(params?: Partial<ActivInhibProps>) {
     this.flucPerc = params?.flucPerc || 7;
     this.stopAfter = params?.stopAfter || 2000;
     this.frameNo = 0;
+    this.active = true;
     this.size = params?.size || { width: 50, height: 50 };
     this.seed = params?.seed || `${Math.random()}`;
     this.dx = params?.dx || 1;
@@ -144,7 +146,9 @@ export class ActivInhibRunner implements ActivInhibProps {
   }
 
   step(): void {
-    if (this.frameNo > this.stopAfter) return;
+    if (this.frameNo > this.stopAfter) {
+      this.active = false;
+    }
     this.frameNo += 1;
     let a_min = Infinity;
     let a_max = -Infinity;
@@ -298,9 +302,11 @@ export class AnimalRunner implements AnimalProps {
   };
   stopAfter: number;
   frameNo: number;
+  active: boolean;
   constructor(params?: Partial<AnimalProps>) {
     this.stopAfter = params?.stopAfter || 2_500;
     this.frameNo = 0;
+    this.active = true;
     this.size = params?.size || { width: 80, height: 80 };
     this.seed = params?.seed || `${Math.random()}`;
     this.dx = params?.dx || 1;
@@ -366,7 +372,10 @@ export class AnimalRunner implements AnimalProps {
   }
 
   step(): void {
-    if (this.frameNo > this.stopAfter) return;
+    if (this.frameNo > this.stopAfter) {
+      this.active = false;
+      return;
+    }
     this.frameNo += 1;
     const { width, height } = this.size;
     const a_grid = new Float32Array(width * height);

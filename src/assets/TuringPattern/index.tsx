@@ -117,6 +117,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       i += 1;
     }
     p.filter(p.BLUR, this.props.blurRadius);
+    if (!runner.active) p.noLoop();
   }
 
   sketch = (p: p5) => {

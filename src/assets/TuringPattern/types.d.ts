@@ -21,6 +21,7 @@ declare interface Runner<Chemicals extends string, Parameters extends string> {
   range: { [CK in Chemicals]: { min: number; max: number } };
   stopAfter: number;
   frameNo: number;
+  active: boolean;
 }
 
 declare type ActivInhibChems = "a" | "h";
