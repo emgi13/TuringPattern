@@ -1,20 +1,10 @@
 import React from "react";
 import p5 from "p5";
-import './styles.scss'
-import { Fig1 } from "./runner";
+import "./styles.scss";
 import { makeImage } from "./utils";
+import { ActivInhibRunner } from "./runner";
 
-const vars1 = {
-  Da: 0.005,
-  Ra: 0.01,
-  Ma: 0.01,
-  Sa: 0,
-  Ka: 0.0,
-  Dh: 0.2,
-  Rh: 0.02,
-  Mh: 0.02,
-};
-const defaultRunner = new Fig1(vars1);
+const defaultRunner = new ActivInhibRunner({ profile: true });
 
 // INFO: interface creation
 // add specific classes for each figure,
@@ -30,13 +20,12 @@ const defaultRunner = new Fig1(vars1);
 // runners for each section instead.
 class TuringPattern extends React.Component<TuringPatternProps> {
   static defaultProps: TuringPatternProps = {
-    size: { width: 30, height: 30 },
     frameRate: 12,
     skipFrames: 1,
     blurRadius: 0,
     frameScale: 0.9,
-    runner: defaultRunner
-  }
+    runner: defaultRunner,
+  };
   p5ref: React.RefObject<HTMLDivElement>;
   p5: p5 | undefined;
   active: boolean;
@@ -61,11 +50,11 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     if (this.active && !inView) {
       this.p5!.frameRate(0);
       this.active = false;
-      console.log("Render paused")
+      console.log("Render paused");
     } else if (!this.active && inView) {
       this.p5!.frameRate(this.props.frameRate);
       this.active = true;
-      console.log("Render resumed")
+      console.log("Render resumed");
     }
   }
 
@@ -91,10 +80,12 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   }
 
   calcFrame() {
+    console.time("calcFrame");
     const { runner } = this.props;
     for (let i = 0; i < this.props.frameRate; i++) {
       runner.step();
     }
+    console.timeEnd("calcFrame");
   }
 
   renderFrame() {
@@ -105,7 +96,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     let i = 0;
     for (const layer in runner.grids) {
       // get the image
-      const img = makeImage(p, runner.grids[layer], runner.size);
+      const img = makeImage(p, runner.grids[layer], runner.size.width);
       // put the image on the canvas
       p.image(
         img,
@@ -118,7 +109,6 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     }
     p.filter(p.BLUR, this.props.blurRadius);
   }
-
 
   sketch = (p: p5) => {
     p.setup = () => {
@@ -140,14 +130,12 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     };
   };
 
-
   render(): React.ReactNode {
     return (
       <div className="TuringPatterns">
         <div className="canvas-cont" ref={this.p5ref}></div>
       </div>
     );
-
   }
 }
 

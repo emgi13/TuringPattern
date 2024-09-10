@@ -1,235 +1,318 @@
 import { getPBC, getRoot, Laplace, rngWithMinMax } from "./utils";
 
-export interface Runner<L extends string, V extends string> {
-  grids: { [Layer in L]: number[][] };
-  size: number;
-  step: () => void;
-  vars: { [Variable in V]: number };
-  seed: number;
-  steady: { [Layer in L]: number };
-  fluc: number;
-  dx: number;
-  dt: number;
-}
+// INFO: Eq 1
 
-// INFO: Figure 1 : Eq 1
-
-type Fig1_layers = "a" | "h";
-
-type Fig1_vars = "Da" | "Ra" | "Ma" | "Ka" | "Sa" | "Dh" | "Rh" | "Mh";
-
-export type fig1_vars_type = {
-  Da: number;
-  Ra: number;
-  Ma: number;
-  Ka: number;
-  Sa: number;
-  Dh: number;
-  Rh: number;
-  Mh: number;
+const _spots_ai: VariableType<ActivInhibChems, ActivInhibParams> = {
+  a: {
+    D: 0.005,
+    r: 0.01,
+    u: 0.01,
+    s: 0,
+    k: 0,
+  },
+  h: {
+    D: 0.2,
+    r: 0.02,
+    u: 0.02,
+    s: 0,
+    k: 0,
+  },
 };
 
-export class Fig1 implements Runner<Fig1_layers, Fig1_vars> {
-  size: number;
-  seed: number;
-  grids: { a: number[][]; h: number[][] };
-  vars: fig1_vars_type;
-  steady: { a: number; h: number };
-  fluc: number;
+const _stripes_ai = {
+  ..._spots_ai,
+  a: {
+    ..._spots_ai.a,
+    k: 0.25,
+  },
+};
+
+export const ActivInhibParams = {
+  spots: _spots_ai,
+  stripes: _stripes_ai,
+};
+
+export class ActivInhibRunner implements ActivInhibProps {
+  flucPerc: number;
+  size: { width: number; height: number };
+  seed: string;
   dx: number;
   dt: number;
-  constructor(
-    vars: fig1_vars_type,
-    size: number = 50,
-    seed: number = 1,
-    fluc: number = 3,
-    dx: number = 1,
-    dt: number = 1,
-  ) {
-    this.size = size;
-    this.seed = seed;
-    this.vars = vars;
-    this.fluc = fluc;
-    this.dx = dx;
-    this.dt = dt;
+  grids: { a: number[][]; h: number[][] };
+  range: { a: { min: number; max: number }; h: { min: number; max: number } };
+  vars: {
+    a: {
+      D: number;
+      r: number;
+      u: number;
+      s: number;
+      k: number;
+    };
+    h: {
+      D: number;
+      r: number;
+      u: number;
+      s: number;
+      k: number;
+    };
+  };
+  profile: boolean;
+  constructor(params?: Partial<ActivInhibProps>) {
+    this.flucPerc = params?.flucPerc || 7;
+    this.size = params?.size || { width: 80, height: 80 };
+    this.seed = params?.seed || `${Math.random()}`;
+    this.dx = params?.dx || 1;
+    this.dt = params?.dt || 1;
+    this.profile = params?.profile || false;
+    this.vars = params?.vars || _spots_ai;
+    this.range = {
+      a: { min: Infinity, max: -Infinity },
+      h: { min: Infinity, max: -Infinity },
+    };
+    // binds
+    this.step = this.step.bind(this);
+    this.prof = this.prof.bind(this);
+    // profiler
+    if (this.profile) this.prof();
+    // make init grid
+    this.grids = this.initGrid;
+  }
 
-    // INFO: Find the steady state solution
+  prof() {
+    console.log(this);
+    console.time("init");
+    this.grids = this.initGrid;
+    console.timeEnd("init");
+    console.time("run");
+    for (let i = 0; i < 100; i++) {
+      this.step();
+    }
+    console.timeEnd("run");
+  }
+
+  get initGrid(): { a: number[][]; h: number[][] } {
+    // Find the steady state solution
+    const { a: va, h: vh } = this.vars;
     const aa_func = (a: number) => {
       return (
-        (this.vars.Ra * a * a * this.vars.Mh) /
-        (1 + this.vars.Ka * a * a) /
-        (this.vars.Rh * a * a) -
-        this.vars.Ma * a +
-        this.vars.Sa
+        (va.r * a * a * vh.u) / (1 + va.k * a * a) / (vh.r * a * a) -
+        va.u * a +
+        va.s
       );
     };
-
     const aa = getRoot(aa_func, 0.2, 1e-3, 1e-10);
+    const hh = (vh.r * aa * aa) / vh.u;
 
-    const hh = (this.vars.Rh * aa * aa) / this.vars.Mh;
+    const rng = rngWithMinMax(
+      this.seed,
+      (100 - this.flucPerc) / 100,
+      (100 + this.flucPerc) / 100,
+    );
 
-    this.steady = { a: aa, h: hh };
-    // console.log("Steady", this.steady);
+    const a_grid: number[][] = [];
+    const h_grid: number[][] = [];
+    const { width, height } = this.size;
+    for (let i = 0; i < height; i++) {
+      const a_row: number[] = [];
+      const h_row: number[] = [];
+      for (let j = 0; j < width; j++) {
+        const a = aa * rng();
+        const h = hh * rng();
 
-    const rng = rngWithMinMax(seed, (100 - fluc) / 100, (100 + fluc) / 100);
+        if (a > this.range.a.max) {
+          this.range.a.max = a;
+        } else if (a < this.range.a.min) {
+          this.range.a.min = a;
+        }
 
-    // INFO: make the initial grid
-    const a_grid = [];
-    const h_grid = [];
-    for (let i = 0; i < this.size; i++) {
-      const a_row = [];
-      const h_row = [];
-      for (let j = 0; j < this.size; j++) {
-        a_row.push(this.steady.a * rng());
-        h_row.push(this.steady.h * rng());
+        if (h > this.range.h.max) {
+          this.range.h.max = h;
+        } else if (h < this.range.h.min) {
+          this.range.a.min = h;
+        }
+
+        a_row.push(a);
+        h_row.push(h);
       }
       a_grid.push(a_row);
       h_grid.push(h_row);
     }
-    this.grids = { a: a_grid, h: h_grid };
-    // console.info("Grids", this.grids);
-    this.step = this.step.bind(this);
+
+    return { a: a_grid, h: h_grid };
   }
-  step() {
+
+  step(): void {
     const a_grid = structuredClone(this.grids.a);
     const h_grid = structuredClone(this.grids.h);
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
+
+    let a_min = Infinity;
+    let a_max = -Infinity;
+    let h_min = Infinity;
+    let h_max = -Infinity;
+
+    const { width, height } = this.size;
+    const { a: va, h: vh } = this.vars;
+
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
         const a = this.grids.a[i][j];
         const h = this.grids.h[i][j];
-        a_grid[i][j] +=
+
+        const aa =
+          a +
           this.dt *
-          (this.vars.Da *
+          (va.D *
             Laplace((x, y) => getPBC(this.grids.a, x, y), i, j, this.dx) +
-            (this.vars.Ra * a * a) / (1 + this.vars.Ka * a * a) / h -
-            this.vars.Ma * a +
-            this.vars.Sa);
-        h_grid[i][j] +=
+            (va.r * a * a) / (1 + va.k * a * a) / h -
+            va.u * a +
+            va.s);
+        const hh =
+          h +
           this.dt *
-          (this.vars.Dh *
+          (vh.D *
             Laplace((x, y) => getPBC(this.grids.h, x, y), i, j, this.dx) +
-            this.vars.Rh * a * a -
-            this.vars.Mh * h);
-      }
-    }
-    this.grids = { a: a_grid, h: h_grid };
-  }
-}
+            vh.r * a * a -
+            vh.u * h);
 
-// INFO: Fig2 : Eq 8
-
-type Fig2_layers = "a" | "s" | "y";
-
-type Fig2_vars =
-  | "Da"
-  | "Ra"
-  | "Ka"
-  | "Ds"
-  | "Ss"
-  | "Ks"
-  | "Rs"
-  | "Ms"
-  | "Ry"
-  | "Ky"
-  | "My"
-  | "Sy";
-
-export type fig2_vars_type = {
-  Da: number;
-  Ra: number;
-  Ka: number;
-  Ds: number;
-  Ss: number;
-  Ks: number;
-  Rs: number;
-  Ms: number;
-  Ry: number;
-  Ky: number;
-  My: number;
-  Sy: number;
-};
-
-export class Fig2 implements Runner<Fig2_layers, Fig2_vars> {
-  size: number;
-  dt: number;
-  seed: number;
-  grids: { a: number[][]; s: number[][]; y: number[][] };
-  vars: fig2_vars_type;
-  steady: { a: number; s: number; y: number };
-  fluc: number;
-  dx: number;
-  constructor(
-    vars: fig2_vars_type,
-    init_val: { a: number; aa: number; s: number; y: number },
-    size: number = 50,
-    seed: number = Math.random(),
-    fluc: number = 3,
-    dx: number = 1,
-    dt: number = 1,
-  ) {
-    this.size = size;
-    this.seed = seed;
-    this.vars = vars;
-    this.fluc = fluc;
-    this.dx = dx;
-    this.dt = dt;
-    this.steady = { a: 0, s: 0, y: 0 };
-
-    const rng = rngWithMinMax(this.seed, 0, 3000);
-
-    // INFO: make the initial grid
-    const a_grid = [];
-    const s_grid = [];
-    const y_grid = [];
-    for (let i = 0; i < this.size; i++) {
-      const a_row = [];
-      const s_row = [];
-      const y_row = [];
-      for (let j = 0; j < this.size; j++) {
-        if (rng() < 10) {
-          a_row.push(init_val.aa);
-        } else {
-          a_row.push(init_val.a);
+        if (aa < a_min) {
+          a_min = aa;
+        } else if (aa > a_max) {
+          a_max = aa;
         }
-        s_row.push(init_val.s);
-        y_row.push(init_val.y);
-      }
-      a_grid.push(a_row);
-      s_grid.push(s_row);
-      y_grid.push(y_row);
-    }
-    this.grids = { a: a_grid, s: s_grid, y: y_grid };
-    this.step = this.step.bind(this);
-  }
-  step() {
-    const vars = this.vars;
-    const a_grid = structuredClone(this.grids.a);
-    const s_grid = structuredClone(this.grids.s);
-    const y_grid = structuredClone(this.grids.y);
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
-        const a = this.grids.a[i][j];
-        const s = this.grids.s[i][j];
-        const y = this.grids.y[i][j];
-        a_grid[i][j] +=
-          this.dt *
-          (vars.Da *
-            Laplace((x, y) => getPBC(this.grids.a, x, y), i, j, this.dx) +
-            vars.Ra * ((a * a * s) / (1 + vars.Ka * a * a) - a));
-        s_grid[i][j] +=
-          this.dt *
-          (vars.Ds *
-            Laplace((x, y) => getPBC(this.grids.s, x, y), i, j, this.dx) +
-            vars.Ss / (1 + vars.Ks * y) -
-            (vars.Rs * a * a * s) / (1 + vars.Ka * a * a) -
-            vars.Ms * s);
-        y_grid[i][j] +=
-          this.dt *
-          ((vars.Ry * y * y) / (1 + vars.Ky * y * y) -
-            vars.My * y +
-            vars.Sy * a);
+
+        if (hh < h_min) {
+          h_min = hh;
+        } else if (hh > h_max) {
+          h_max = hh;
+        }
+
+        a_grid[i][j] = aa;
+        h_grid[i][j] = hh;
       }
     }
-    this.grids = { a: a_grid, s: s_grid, y: y_grid };
+
+    this.grids = { a: a_grid, h: h_grid };
+    this.range = {
+      a: { min: a_min, max: a_max },
+      h: { min: h_min, max: h_max },
+    };
   }
 }
+
+// // INFO: Fig2 : Eq 8
+//
+// type Fig2_layers = "a" | "s" | "y";
+//
+// type Fig2_vars =
+//   | "Da"
+//   | "Ra"
+//   | "Ka"
+//   | "Ds"
+//   | "Ss"
+//   | "Ks"
+//   | "Rs"
+//   | "Ms"
+//   | "Ry"
+//   | "Ky"
+//   | "My"
+//   | "Sy";
+//
+// export type fig2_vars_type = {
+//   Da: number;
+//   Ra: number;
+//   Ka: number;
+//   Ds: number;
+//   Ss: number;
+//   Ks: number;
+//   Rs: number;
+//   Ms: number;
+//   Ry: number;
+//   Ky: number;
+//   My: number;
+//   Sy: number;
+// };
+//
+// export class Fig2 implements Runner<Fig2_layers, Fig2_vars> {
+//   size: number;
+//   dt: number;
+//   seed: number;
+//   grids: { a: number[][]; s: number[][]; y: number[][] };
+//   vars: fig2_vars_type;
+//   steady: { a: number; s: number; y: number };
+//   fluc: number;
+//   dx: number;
+//   constructor(
+//     vars: fig2_vars_type,
+//     init_val: { a: number; aa: number; s: number; y: number },
+//     size: number = 50,
+//     seed: number = Math.random(),
+//     fluc: number = 3,
+//     dx: number = 1,
+//     dt: number = 1,
+//   ) {
+//     this.size = size;
+//     this.seed = seed;
+//     this.vars = vars;
+//     this.fluc = fluc;
+//     this.dx = dx;
+//     this.dt = dt;
+//     this.steady = { a: 0, s: 0, y: 0 };
+//
+//     const rng = rngWithMinMax(this.seed, 0, 3000);
+//
+//     // INFO: make the initial grid
+//     const a_grid = [];
+//     const s_grid = [];
+//     const y_grid = [];
+//     for (let i = 0; i < this.size; i++) {
+//       const a_row = [];
+//       const s_row = [];
+//       const y_row = [];
+//       for (let j = 0; j < this.size; j++) {
+//         if (rng() < 10) {
+//           a_row.push(init_val.aa);
+//         } else {
+//           a_row.push(init_val.a);
+//         }
+//         s_row.push(init_val.s);
+//         y_row.push(init_val.y);
+//       }
+//       a_grid.push(a_row);
+//       s_grid.push(s_row);
+//       y_grid.push(y_row);
+//     }
+//     this.grids = { a: a_grid, s: s_grid, y: y_grid };
+//     this.step = this.step.bind(this);
+//   }
+//   step() {
+//     const vars = this.vars;
+//     const a_grid = structuredClone(this.grids.a);
+//     const s_grid = structuredClone(this.grids.s);
+//     const y_grid = structuredClone(this.grids.y);
+//     for (let i = 0; i < this.size; i++) {
+//       for (let j = 0; j < this.size; j++) {
+//         const a = this.grids.a[i][j];
+//         const s = this.grids.s[i][j];
+//         const y = this.grids.y[i][j];
+//         a_grid[i][j] +=
+//           this.dt *
+//           (vars.Da *
+//             Laplace((x, y) => getPBC(this.grids.a, x, y), i, j, this.dx) +
+//             vars.Ra * ((a * a * s) / (1 + vars.Ka * a * a) - a));
+//         s_grid[i][j] +=
+//           this.dt *
+//           (vars.Ds *
+//             Laplace((x, y) => getPBC(this.grids.s, x, y), i, j, this.dx) +
+//             vars.Ss / (1 + vars.Ks * y) -
+//             (vars.Rs * a * a * s) / (1 + vars.Ka * a * a) -
+//             vars.Ms * s);
+//         y_grid[i][j] +=
+//           this.dt *
+//           ((vars.Ry * y * y) / (1 + vars.Ky * y * y) -
+//             vars.My * y +
+//             vars.Sy * a);
+//       }
+//     }
+//     this.grids = { a: a_grid, s: s_grid, y: y_grid };
+//   }
+// }

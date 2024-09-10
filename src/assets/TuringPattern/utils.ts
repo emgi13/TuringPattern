@@ -116,7 +116,7 @@ export function makeImage(
   return img;
 }
 
-export const rngWithMinMax = (seed: number, min: number, max: number) => {
-  const rng = seedrandom(`${seed}`);
+export const rngWithMinMax = (seed: string, min: number, max: number) => {
+  const rng = seedrandom(seed);
   return () => min + (max - min) * rng();
 };
