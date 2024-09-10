@@ -59,12 +59,12 @@ export class ActivInhibRunner implements ActivInhibProps {
   profile: boolean;
   constructor(params?: Partial<ActivInhibProps>) {
     this.flucPerc = params?.flucPerc || 7;
-    this.size = params?.size || { width: 80, height: 80 };
+    this.size = params?.size || { width: 80, height: 60 };
     this.seed = params?.seed || `${Math.random()}`;
     this.dx = params?.dx || 1;
     this.dt = params?.dt || 1;
     this.profile = params?.profile || false;
-    this.vars = params?.vars || _spots_ai;
+    this.vars = params?.vars || _stripes_ai;
     this.range = {
       a: { min: Infinity, max: -Infinity },
       h: { min: Infinity, max: -Infinity },
@@ -151,10 +151,10 @@ export class ActivInhibRunner implements ActivInhibProps {
 
     const { a: va, h: vh } = this.vars;
 
-    for (let i = 0; i < height; i++) {
-      for (let j = 0; j < width; j++) {
-        const a = this.grids.a[i + width * j];
-        const h = this.grids.h[i + width * j];
+    for (let j = 0; j < height; j++) {
+      for (let i = 0; i < width; i++) {
+        const a = this.grids.a[i + j * width];
+        const h = this.grids.h[i + j * width];
 
         const LapA = Laplace((x, y) => getPBC(this.grids.a, this.size, x, y));
         const LapH = Laplace((x, y) => getPBC(this.grids.h, this.size, x, y));
@@ -181,8 +181,8 @@ export class ActivInhibRunner implements ActivInhibProps {
           h_max = hh;
         }
 
-        a_grid[i + width * j] = aa;
-        h_grid[i + width * j] = hh;
+        a_grid[i + j * width] = aa;
+        h_grid[i + j * width] = hh;
       }
     }
 

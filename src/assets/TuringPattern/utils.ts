@@ -9,7 +9,7 @@ export const getPBC = (
   j: number,
 ): number => {
   const { width, height } = size;
-  return grid[((i + width) % width) + width * ((j + height) % height)];
+  return grid[((i + width) % width) + ((j + height) % height) * width];
 };
 
 // INFO: Implement the Newton-Rapson method of root finding for
@@ -69,14 +69,16 @@ export function makeImage(
   const { min, max } = range;
 
   // Set pixel values based on the 2D array
-  for (let i = 0; i < width * height; i++) {
-    let brightness = p.map(grid[i], min, max, 0, 255);
-    if (invert) brightness = 255 - brightness;
-    const index = i * 4; // Calculate pixel index
-    img.pixels[index] = brightness; // Red
-    img.pixels[index + 1] = brightness; // Green
-    img.pixels[index + 2] = brightness; // Blue
-    img.pixels[index + 3] = 255; // Alpha
+  for (let j = 0; j < height; j++) {
+    for (let i = 0; i < width; i++) {
+      let brightness = p.map(grid[i + j * width], min, max, 0, 255);
+      if (invert) brightness = 255 - brightness;
+      const index = (i + j * width) * 4; // Calculate pixel index
+      img.pixels[index] = brightness; // Red
+      img.pixels[index + 1] = brightness; // Green
+      img.pixels[index + 2] = brightness; // Blue
+      img.pixels[index + 3] = 255; // Alpha
+    }
   }
 
   img.updatePixels(); // Update the image with new pixel data

@@ -21,7 +21,7 @@ const defaultRunner = new ActivInhibRunner({ profile: true });
 class TuringPattern extends React.Component<TuringPatternProps> {
   static defaultProps: TuringPatternProps = {
     frameRate: 12,
-    skipFrames: 1,
+    skipFrames: 40,
     blurRadius: 0,
     frameScale: 0.9,
     runner: defaultRunner,
@@ -80,19 +80,21 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   }
 
   calcFrame() {
-    console.time("calcFrame");
+    // console.time("calcFrame");
     const { runner } = this.props;
     for (let i = 0; i < this.props.frameRate; i++) {
       runner.step();
     }
-    console.timeEnd("calcFrame");
+    // console.timeEnd("calcFrame");
   }
 
   renderFrame() {
     // console.log("render");
     const { runner } = this.props;
+    const { width: w, height: h } = runner.size;
     const p = this.p5!;
     const width = p.width;
+    const height = (width * h) / w;
     let i = 0;
     for (const layer in runner.grids) {
       // get the image
@@ -106,9 +108,9 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       p.image(
         img,
         ((1 - this.props.frameScale) / 2) * width,
-        i * width + ((1 - this.props.frameScale) / 2) * width,
+        i * height + ((1 - this.props.frameScale) / 2) * height,
         width * this.props.frameScale,
-        width * this.props.frameScale,
+        height * this.props.frameScale,
       );
       i += 1;
     }
@@ -117,12 +119,13 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   sketch = (p: p5) => {
     p.setup = () => {
+      const { size } = this.props.runner;
       const layers = Object.keys(this.props.runner.grids).length;
       const width = this.p5ref.current?.offsetWidth || 400;
-      const height = width * layers;
+      const height = ((width * size.height) / size.width) * layers;
       p.createCanvas(width, height);
       p.background(0, 0, 0, 0);
-      p.frameRate(0);
+      // p.frameRate(0);
       window.addEventListener("scroll", this.handleScrollDebounced, {
         passive: true,
       });
