@@ -47,7 +47,7 @@ declare interface TuringPatternProps {
   frameScale: number;
   invert: boolean;
   // runner
-  runner: Runner<any, any>;
+  makeRunner: () => Runner<any, any>;
   // Render Speeds
   frameRate: number;
   skipFrames: number;

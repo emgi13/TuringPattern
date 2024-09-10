@@ -4,7 +4,7 @@ import "./styles.scss";
 import { makeImage } from "./utils";
 import { AnimalRunner } from "./runner";
 
-const defaultRunner = new AnimalRunner();
+const defaultRunner = () => new AnimalRunner();
 
 // INFO: interface creation
 // add specific classes for each figure,
@@ -24,21 +24,28 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     skipFrames: 60,
     blurRadius: 0,
     frameScale: 0.9,
-    runner: defaultRunner,
+    makeRunner: defaultRunner,
     invert: false,
   };
   p5ref: React.RefObject<HTMLDivElement>;
   p5: p5 | undefined;
   active: boolean;
   debounceTimeout: number | undefined;
+  runner: Runner<any, any>;
   constructor(props: TuringPatternProps) {
     super(props);
     this.p5ref = React.createRef();
+    this.runner = this.props.makeRunner();
     this.active = false;
 
     // binds
     this.handleScroll = this.handleScroll.bind(this);
     this.handleScrollDebounced = this.handleScrollDebounced.bind(this);
+    this.handleTouch = this.handleTouch.bind(this);
+  }
+
+  handleTouch() {
+    this.runner = this.props.makeRunner();
   }
 
   handleScrollDebounced() {
@@ -71,6 +78,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   componentDidMount(): void {
     this.p5 = new p5(this.sketch, this.p5ref.current as HTMLElement);
+    this.p5ref.current?.addEventListener("click", this.handleTouch);
     // console.log(this.p5);
   }
 
@@ -82,7 +90,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   calcFrame() {
     // console.time("calcFrame");
-    const { runner } = this.props;
+    const { runner } = this;
     for (let i = 0; i < this.props.skipFrames; i++) {
       runner.step();
     }
@@ -91,7 +99,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   renderFrame() {
     // console.log("render");
-    const { runner } = this.props;
+    const { runner } = this;
     const { width: w, height: h } = runner.size;
     const p = this.p5!;
     const width = p.width;
@@ -122,8 +130,8 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   sketch = (p: p5) => {
     p.setup = () => {
-      const { size } = this.props.runner;
-      const layers = Object.keys(this.props.runner.grids).length;
+      const { size } = this.runner;
+      const layers = Object.keys(this.runner.grids).length;
       const width = this.p5ref.current?.offsetWidth || 400;
       const height = ((width * size.height) / size.width) * layers;
       p.createCanvas(width, height);

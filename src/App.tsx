@@ -12,13 +12,15 @@ function App() {
     <>
       <div id="main">
         <TuringPattern
-          runner={new ActivInhibRunner({ vars: ActivInhibParams.spots })}
+          makeRunner={() =>
+            new ActivInhibRunner({ vars: ActivInhibParams.spots })
+          }
           invert
           frameRate={30}
           skipFrames={10}
         />
         <TuringPattern
-          runner={
+          makeRunner={() =>
             new ActivInhibRunner({
               vars: ActivInhibParams.stripes,
               stopAfter: 20000,
@@ -29,7 +31,7 @@ function App() {
           skipFrames={25}
         />
         <TuringPattern
-          runner={
+          makeRunner={() =>
             new AnimalRunner({ vars: AnimalParams.giraffe, stopAfter: 3000 })
           }
           invert
@@ -38,7 +40,7 @@ function App() {
           skipFrames={10}
         />
         <TuringPattern
-          runner={
+          makeRunner={() =>
             new AnimalRunner({
               vars: AnimalParams.leopard,
               stopAfter: 6000,
@@ -53,7 +55,7 @@ function App() {
           skipFrames={10}
         />
         <TuringPattern
-          runner={
+          makeRunner={() =>
             new AnimalRunner({
               vars: AnimalParams.cheetah,
               stopAfter: 2000,
