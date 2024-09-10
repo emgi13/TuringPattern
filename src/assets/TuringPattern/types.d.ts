@@ -19,6 +19,8 @@ declare interface Runner<Chemicals extends string, Parameters extends string> {
   vars: VariableType<Chemicals, Parameters>;
   profile: boolean;
   range: { [CK in Chemicals]: { min: number; max: number } };
+  stopAfter: number;
+  frameNo: number;
 }
 
 declare type ActivInhibChems = "a" | "h";
@@ -29,10 +31,20 @@ declare interface ActivInhibProps
   flucPerc: number;
 }
 
+declare type AnimalChems = "a" | "s" | "y";
+declare type AnimalParams = "D" | "r" | "u" | "s" | "k";
+
+declare interface AnimalProps extends Runner<AnimalChems, AnimalParams> {
+  initConc: { [K in AnimalChems]: number };
+  randA: number;
+  randProb: number;
+}
+
 declare interface TuringPatternProps {
   // Frame post processing
   blurRadius: number;
   frameScale: number;
+  invert: boolean;
   // runner
   runner: Runner<any, any>;
   // Render Speeds

@@ -57,8 +57,12 @@ export class ActivInhibRunner implements ActivInhibProps {
     };
   };
   profile: boolean;
+  stopAfter: number;
+  frameNo: number;
   constructor(params?: Partial<ActivInhibProps>) {
     this.flucPerc = params?.flucPerc || 7;
+    this.stopAfter = params?.stopAfter || 2000;
+    this.frameNo = 0;
     this.size = params?.size || { width: 50, height: 50 };
     this.seed = params?.seed || `${Math.random()}`;
     this.dx = params?.dx || 1;
@@ -140,6 +144,8 @@ export class ActivInhibRunner implements ActivInhibProps {
   }
 
   step(): void {
+    if (this.frameNo > this.stopAfter) return;
+    this.frameNo += 1;
     let a_min = Infinity;
     let a_max = -Infinity;
     let h_min = Infinity;
@@ -194,120 +200,242 @@ export class ActivInhibRunner implements ActivInhibProps {
   }
 }
 
-// // INFO: Fig2 : Eq 8
-//
-// type Fig2_layers = "a" | "s" | "y";
-//
-// type Fig2_vars =
-//   | "Da"
-//   | "Ra"
-//   | "Ka"
-//   | "Ds"
-//   | "Ss"
-//   | "Ks"
-//   | "Rs"
-//   | "Ms"
-//   | "Ry"
-//   | "Ky"
-//   | "My"
-//   | "Sy";
-//
-// export type fig2_vars_type = {
-//   Da: number;
-//   Ra: number;
-//   Ka: number;
-//   Ds: number;
-//   Ss: number;
-//   Ks: number;
-//   Rs: number;
-//   Ms: number;
-//   Ry: number;
-//   Ky: number;
-//   My: number;
-//   Sy: number;
-// };
-//
-// export class Fig2 implements Runner<Fig2_layers, Fig2_vars> {
-//   size: number;
-//   dt: number;
-//   seed: number;
-//   grids: { a: Float32Array; s: Float32Array; y: Float32Array };
-//   vars: fig2_vars_type;
-//   steady: { a: number; s: number; y: number };
-//   fluc: number;
-//   dx: number;
-//   constructor(
-//     vars: fig2_vars_type,
-//     init_val: { a: number; aa: number; s: number; y: number },
-//     size: number = 50,
-//     seed: number = Math.random(),
-//     fluc: number = 3,
-//     dx: number = 1,
-//     dt: number = 1,
-//   ) {
-//     this.size = size;
-//     this.seed = seed;
-//     this.vars = vars;
-//     this.fluc = fluc;
-//     this.dx = dx;
-//     this.dt = dt;
-//     this.steady = { a: 0, s: 0, y: 0 };
-//
-//     const rng = rngWithMinMax(this.seed, 0, 3000);
-//
-//     // INFO: make the initial grid
-//     const a_grid = [];
-//     const s_grid = [];
-//     const y_grid = [];
-//     for (let i = 0; i < this.size; i++) {
-//       const a_row = [];
-//       const s_row = [];
-//       const y_row = [];
-//       for (let j = 0; j < this.size; j++) {
-//         if (rng() < 10) {
-//           a_row.push(init_val.aa);
-//         } else {
-//           a_row.push(init_val.a);
-//         }
-//         s_row.push(init_val.s);
-//         y_row.push(init_val.y);
-//       }
-//       a_grid.push(a_row);
-//       s_grid.push(s_row);
-//       y_grid.push(y_row);
-//     }
-//     this.grids = { a: a_grid, s: s_grid, y: y_grid };
-//     this.step = this.step.bind(this);
-//   }
-//   step() {
-//     const vars = this.vars;
-//     const a_grid = structuredClone(this.grids.a);
-//     const s_grid = structuredClone(this.grids.s);
-//     const y_grid = structuredClone(this.grids.y);
-//     for (let i = 0; i < this.size; i++) {
-//       for (let j = 0; j < this.size; j++) {
-//         const a = this.grids.a[i][j];
-//         const s = this.grids.s[i][j];
-//         const y = this.grids.y[i][j];
-//         a_grid[i][j] +=
-//           this.dt *
-//           (vars.Da *
-//             Laplace((x, y) => getPBC(this.grids.a, x, y), i, j, this.dx) +
-//             vars.Ra * ((a * a * s) / (1 + vars.Ka * a * a) - a));
-//         s_grid[i][j] +=
-//           this.dt *
-//           (vars.Ds *
-//             Laplace((x, y) => getPBC(this.grids.s, x, y), i, j, this.dx) +
-//             vars.Ss / (1 + vars.Ks * y) -
-//             (vars.Rs * a * a * s) / (1 + vars.Ka * a * a) -
-//             vars.Ms * s);
-//         y_grid[i][j] +=
-//           this.dt *
-//           ((vars.Ry * y * y) / (1 + vars.Ky * y * y) -
-//             vars.My * y +
-//             vars.Sy * a);
-//       }
-//     }
-//     this.grids = { a: a_grid, s: s_grid, y: y_grid };
-//   }
-// }
+// INFO: Eq 8
+
+const _giraffe_params: VariableType<AnimalChems, AnimalParams> = {
+  a: {
+    D: 0.015,
+    r: 0.025,
+    u: 0,
+    s: 0,
+    k: 0.1,
+  },
+  s: {
+    D: 0.03,
+    r: 0.0025,
+    u: 0.00075,
+    s: 0.00225,
+    k: 20.0,
+  },
+  y: {
+    D: 0,
+    r: 0.03,
+    u: 0.003,
+    s: 0.00015,
+    k: 22.0,
+  },
+};
+
+const _leopard_params: VariableType<AnimalChems, AnimalParams> = {
+  a: {
+    D: 0.01,
+    r: 0.05,
+    u: 0,
+    s: 0,
+    k: 0.5,
+  },
+  s: {
+    D: 0.1,
+    r: 0.0035,
+    u: 0.003,
+    s: 0.0075,
+    k: 0.3,
+  },
+  y: {
+    D: 0,
+    r: 0.03,
+    u: 0.003,
+    s: 0.00007,
+    k: 22.0,
+  },
+};
+
+const _cheetah_params: VariableType<AnimalChems, AnimalParams> = {
+  a: {
+    D: 0.015,
+    r: 0.025,
+    u: 0,
+    s: 0,
+    k: 0.5,
+  },
+  s: {
+    D: 0.1,
+    r: 0.0025,
+    u: 0.00075,
+    s: 0.00225,
+    k: 1.0,
+  },
+  y: {
+    D: 0,
+    r: 0.03,
+    u: 0.003,
+    s: 0.00015,
+    k: 22.0,
+  },
+};
+
+export const AnimalParams = {
+  giraffe: _giraffe_params,
+  leopard: _leopard_params,
+  cheetah: _cheetah_params,
+};
+
+export class AnimalRunner implements AnimalProps {
+  size: { width: number; height: number };
+  seed: string;
+  dx: number;
+  dt: number;
+  profile: boolean;
+  initConc: { a: number; s: number; y: number };
+  randA: number;
+  randProb: number;
+  grids: { a: Float32Array; s: Float32Array; y: Float32Array };
+  vars: VariableType<AnimalChems, AnimalParams>;
+  range: {
+    a: { min: number; max: number };
+    s: { min: number; max: number };
+    y: { min: number; max: number };
+  };
+  stopAfter: number;
+  frameNo: number;
+  constructor(params?: Partial<AnimalProps>) {
+    this.stopAfter = params?.stopAfter || 2_500;
+    this.frameNo = 0;
+    this.size = params?.size || { width: 80, height: 80 };
+    this.seed = params?.seed || `${Math.random()}`;
+    this.dx = params?.dx || 1;
+    this.dt = params?.dt || 1;
+    this.initConc = params?.initConc || { a: 0, s: 3, y: 0 };
+    this.randA = params?.randA || 5;
+    this.randProb = params?.randProb || 0.0008;
+    this.profile = params?.profile || false;
+    this.vars = params?.vars || _giraffe_params;
+    this.range = {
+      a: { min: 0, max: 5 },
+      s: { min: 0, max: 5 },
+      y: { min: 0, max: 5 },
+    };
+    // binds
+    this.step = this.step.bind(this);
+    this.prof = this.prof.bind(this);
+    // profiler
+    if (this.profile) this.prof();
+    // make init grid
+    this.grids = this.initGrid;
+  }
+
+  prof() {
+    console.log(this);
+    console.time("init");
+    for (let i = 0; i < 1_000; i++) {
+      this.grids = this.initGrid;
+    }
+    console.timeEnd("init");
+    console.time("run");
+    for (let i = 0; i < 1_000; i++) {
+      this.step();
+    }
+    console.timeEnd("run");
+  }
+
+  get initGrid(): { a: Float32Array; s: Float32Array; y: Float32Array } {
+    // Find the steady state solution
+    const rng = rngWithMinMax(this.seed, 0, 1);
+
+    const { width, height } = this.size;
+
+    const { a, s, y } = this.initConc;
+
+    const a_grid: Float32Array = new Float32Array(width * height);
+    const s_grid: Float32Array = new Float32Array(width * height);
+    const y_grid: Float32Array = new Float32Array(width * height);
+
+    for (let i = 0; i < height * width; i++) {
+      a_grid[i] = a;
+      s_grid[i] = s;
+      y_grid[i] = y;
+    }
+
+    for (let i = 0; i < width * height * this.randProb; i++) {
+      const x = Math.floor(width * rng());
+      const y = Math.floor(height * rng());
+      a_grid[x + y * width] = this.randA;
+    }
+
+    return { a: a_grid, s: s_grid, y: y_grid };
+  }
+
+  step(): void {
+    if (this.frameNo > this.stopAfter) return;
+    this.frameNo += 1;
+    const { width, height } = this.size;
+    const a_grid = new Float32Array(width * height);
+    const s_grid = new Float32Array(width * height);
+    const y_grid = new Float32Array(width * height);
+
+    let a_min = Infinity;
+    let a_max = -Infinity;
+    let s_min = Infinity;
+    let s_max = -Infinity;
+    let y_min = Infinity;
+    let y_max = -Infinity;
+
+    const { a: va, s: vs, y: vy } = this.vars;
+
+    for (let j = 0; j < height; j++) {
+      for (let i = 0; i < width; i++) {
+        const a = this.grids.a[i + j * width];
+        const s = this.grids.s[i + j * width];
+        const y = this.grids.y[i + j * width];
+
+        const LapA = Laplace((x, y) => getPBC(this.grids.a, this.size, x, y));
+        const LapS = Laplace((x, y) => getPBC(this.grids.s, this.size, x, y));
+
+        const aa =
+          a +
+          this.dt *
+            (va.D * LapA(i, j, this.dx) +
+              va.r * ((a * a * s) / (1 + va.k * a * a) - a));
+        const ss =
+          s +
+          this.dt *
+            (vs.D * LapS(i, j, this.dx) +
+              vs.s / (1 + vs.s * y) -
+              (vs.r * a * a * s) / (1 + va.k * a * a) -
+              vs.u * s);
+        const yy =
+          y +
+          this.dt * ((vy.r * y * y) / (1 + vy.k * y * y) - vy.u * y + vy.s * a);
+
+        a_grid[i + j * width] = aa;
+        s_grid[i + j * width] = ss;
+        y_grid[i + j * width] = yy;
+
+        if (aa < a_min) {
+          a_min = aa;
+        } else if (aa > a_max) {
+          a_max = aa;
+        }
+
+        if (ss < s_min) {
+          s_min = ss;
+        } else if (ss > s_max) {
+          s_max = ss;
+        }
+
+        if (yy < y_min) {
+          y_min = yy;
+        } else if (y > y_max) {
+          y_max = yy;
+        }
+      }
+    }
+
+    this.grids = { a: a_grid, s: s_grid, y: y_grid };
+    this.range = {
+      a: { min: a_min, max: a_max },
+      s: { min: s_min, max: s_max },
+      y: { min: y_min, max: y_max },
+    };
+  }
+}

@@ -2,9 +2,9 @@ import React from "react";
 import p5 from "p5";
 import "./styles.scss";
 import { makeImage } from "./utils";
-import { ActivInhibRunner } from "./runner";
+import { AnimalRunner } from "./runner";
 
-const defaultRunner = new ActivInhibRunner();
+const defaultRunner = new AnimalRunner();
 
 // INFO: interface creation
 // add specific classes for each figure,
@@ -25,6 +25,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     blurRadius: 0,
     frameScale: 0.9,
     runner: defaultRunner,
+    invert: false,
   };
   p5ref: React.RefObject<HTMLDivElement>;
   p5: p5 | undefined;
@@ -103,6 +104,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
         runner.grids[layer],
         runner.size,
         runner.range[layer],
+        this.props.invert,
       );
       // put the image on the canvas
       p.image(
