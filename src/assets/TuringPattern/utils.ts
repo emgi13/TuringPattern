@@ -2,9 +2,14 @@ import type p5 from "p5";
 import seedrandom from "seedrandom";
 
 // INFO: get Periodic Boundary Conditions
-export function getPBC(grid: number[][], i: number, j: number): number {
+export const getPBC = (
+  grid: number[][],
+  size: { width: number; height: number },
+  i: number,
+  j: number,
+): number => {
   const width = grid.length;
-  const height = grid.at(0)!.length;
+  const height = grid[0].length;
   let x = i;
   if (x < 0) x += width;
   x %= width;
@@ -12,7 +17,7 @@ export function getPBC(grid: number[][], i: number, j: number): number {
   if (y < 0) y += height;
   y %= height;
   return grid[x][y];
-}
+};
 
 // INFO: Implement the Newton-Rapson method of root finding for
 // calculating the steady state conditions

@@ -81,10 +81,12 @@ export class ActivInhibRunner implements ActivInhibProps {
   prof() {
     console.log(this);
     console.time("init");
-    this.grids = this.initGrid;
+    for (let i = 0; i < 10_000; i++) {
+      this.grids = this.initGrid;
+    }
     console.timeEnd("init");
     console.time("run");
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10_000; i++) {
       this.step();
     }
     console.timeEnd("run");
@@ -162,7 +164,12 @@ export class ActivInhibRunner implements ActivInhibProps {
           a +
           this.dt *
           (va.D *
-            Laplace((x, y) => getPBC(this.grids.a, x, y), i, j, this.dx) +
+            Laplace(
+              (x, y) => getPBC(this.grids.a, this.size, x, y),
+              i,
+              j,
+              this.dx,
+            ) +
             (va.r * a * a) / (1 + va.k * a * a) / h -
             va.u * a +
             va.s);
@@ -170,7 +177,12 @@ export class ActivInhibRunner implements ActivInhibProps {
           h +
           this.dt *
           (vh.D *
-            Laplace((x, y) => getPBC(this.grids.h, x, y), i, j, this.dx) +
+            Laplace(
+              (x, y) => getPBC(this.grids.h, this.size, x, y),
+              i,
+              j,
+              this.dx,
+            ) +
             vh.r * a * a -
             vh.u * h);
 
