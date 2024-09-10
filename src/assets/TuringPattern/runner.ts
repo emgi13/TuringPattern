@@ -81,12 +81,12 @@ export class ActivInhibRunner implements ActivInhibProps {
   prof() {
     console.log(this);
     console.time("init");
-    for (let i = 0; i < 10_000; i++) {
+    for (let i = 0; i < 1_000; i++) {
       this.grids = this.initGrid;
     }
     console.timeEnd("init");
     console.time("run");
-    for (let i = 0; i < 10_000; i++) {
+    for (let i = 0; i < 1_000; i++) {
       this.step();
     }
     console.timeEnd("run");
@@ -166,10 +166,10 @@ export class ActivInhibRunner implements ActivInhibProps {
         const aa =
           a +
           this.dt *
-          (va.D * LapA(i, j, this.dx) +
-            (va.r * a * a) / (1 + va.k * a * a) / h -
-            va.u * a +
-            va.s);
+            (va.D * LapA(i, j, this.dx) +
+              (va.r * a * a) / (1 + va.k * a * a) / h -
+              va.u * a +
+              va.s);
         const hh =
           h + this.dt * (vh.D * LapH(i, j, this.dx) + vh.r * a * a - vh.u * h);
 
