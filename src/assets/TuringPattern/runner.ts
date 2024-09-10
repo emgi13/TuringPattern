@@ -409,7 +409,7 @@ export class AnimalRunner implements AnimalProps {
           s +
           this.dt *
             (vs.D * LapS(i, j, this.dx) +
-              vs.s / (1 + vs.s * y) -
+              vs.s / (1 + vs.k * y) -
               (vs.r * a * a * s) / (1 + va.k * a * a) -
               vs.u * s);
         const yy =
