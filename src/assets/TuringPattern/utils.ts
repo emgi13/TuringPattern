@@ -3,13 +3,13 @@ import seedrandom from "seedrandom";
 
 // INFO: get Periodic Boundary Conditions
 export const getPBC = (
-  grid: number[][],
+  grid: Float32Array,
   size: { width: number; height: number },
   i: number,
   j: number,
 ): number => {
   const { width, height } = size;
-  return grid[(i + width) % width][(j + height) % height];
+  return grid[((i + width) % width) + width * ((j + height) % height)];
 };
 
 // INFO: Implement the Newton-Rapson method of root finding for
@@ -45,66 +45,38 @@ export function getRoot(
 
 export const Laplace =
   (getter: (i: number, j: number) => number) =>
-    (i: number, j: number, dx: number) => {
-      const sum =
-        getter(i - 1, j) + getter(i + 1, j) + getter(i, j - 1) + getter(i, j + 1);
-      return (sum - 4 * getter(i, j)) / (dx * dx);
-    };
-
-export function findMinMax(
-  matrix: number[][],
-): { min: number; max: number } | null {
-  if (matrix.length === 0 || matrix[0].length === 0) {
-    return null; // Return null if the input is an empty array
-  }
-
-  let min = Infinity;
-  let max = -Infinity;
-
-  for (const row of matrix) {
-    for (const num of row) {
-      if (num < min) {
-        min = num;
-      }
-      if (num > max) {
-        max = num;
-      }
-    }
-  }
-
-  return { min, max };
-}
+  (i: number, j: number, dx: number) => {
+    const sum =
+      getter(i - 1, j) + getter(i + 1, j) + getter(i, j - 1) + getter(i, j + 1);
+    return (sum - 4 * getter(i, j)) / (dx * dx);
+  };
 
 // let mins: number[] = [];
 // let maxs: number[] = [];
 
 export function makeImage(
   p: p5,
-  grid: number[][],
-  size: number,
+  grid: Float32Array,
+  size: { width: number; height: number },
+  range: { min: number; max: number },
   invert: boolean = true,
 ): p5.Image {
   // Create an image object
-  const img = p.createImage(size, size);
+  const { width, height } = size;
+  const img = p.createImage(width, height);
   img.loadPixels();
 
-  // get min max values
-  const { min, max } = findMinMax(grid)!;
-  // mins.push(min);
-  // maxs.push(max);
-  // console.log(Math.min(...mins), Math.max(...maxs));
+  const { min, max } = range;
 
   // Set pixel values based on the 2D array
-  for (let i = 0; i < size; i++) {
-    for (let j = 0; j < size; j++) {
-      let brightness = p.map(grid[i][j], min, max, 0, 255);
-      if (invert) brightness = 255 - brightness;
-      const index = (j + i * size) * 4; // Calculate pixel index
-      img.pixels[index] = brightness; // Red
-      img.pixels[index + 1] = brightness; // Green
-      img.pixels[index + 2] = brightness; // Blue
-      img.pixels[index + 3] = 255; // Alpha
-    }
+  for (let i = 0; i < width * height; i++) {
+    let brightness = p.map(grid[i], min, max, 0, 255);
+    if (invert) brightness = 255 - brightness;
+    const index = i * 4; // Calculate pixel index
+    img.pixels[index] = brightness; // Red
+    img.pixels[index + 1] = brightness; // Green
+    img.pixels[index + 2] = brightness; // Blue
+    img.pixels[index + 3] = 255; // Alpha
   }
 
   img.updatePixels(); // Update the image with new pixel data

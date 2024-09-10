@@ -14,7 +14,7 @@ declare interface Runner<Chemicals extends string, Parameters extends string> {
   dx: number;
   dt: number;
   // Grids
-  grids: { [CK in Chemicals]: number[][] };
+  grids: { [CK in Chemicals]: Float32Array };
   // variables
   vars: VariableType<Chemicals, Parameters>;
   profile: boolean;

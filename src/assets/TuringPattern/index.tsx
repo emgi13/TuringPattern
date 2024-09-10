@@ -96,7 +96,12 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     let i = 0;
     for (const layer in runner.grids) {
       // get the image
-      const img = makeImage(p, runner.grids[layer], runner.size.width);
+      const img = makeImage(
+        p,
+        runner.grids[layer],
+        runner.size,
+        runner.range[layer],
+      );
       // put the image on the canvas
       p.image(
         img,

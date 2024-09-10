@@ -38,7 +38,7 @@ export class ActivInhibRunner implements ActivInhibProps {
   seed: string;
   dx: number;
   dt: number;
-  grids: { a: number[][]; h: number[][] };
+  grids: { a: Float32Array; h: Float32Array };
   range: { a: { min: number; max: number }; h: { min: number; max: number } };
   vars: {
     a: {
@@ -92,7 +92,7 @@ export class ActivInhibRunner implements ActivInhibProps {
     console.timeEnd("run");
   }
 
-  get initGrid(): { a: number[][]; h: number[][] } {
+  get initGrid(): { a: Float32Array; h: Float32Array } {
     // Find the steady state solution
     const { a: va, h: vh } = this.vars;
     const aa_func = (a: number) => {
@@ -111,54 +111,50 @@ export class ActivInhibRunner implements ActivInhibProps {
       (100 + this.flucPerc) / 100,
     );
 
-    const a_grid: number[][] = [];
-    const h_grid: number[][] = [];
     const { width, height } = this.size;
-    for (let i = 0; i < height; i++) {
-      const a_row: number[] = [];
-      const h_row: number[] = [];
-      for (let j = 0; j < width; j++) {
-        const a = aa * rng();
-        const h = hh * rng();
 
-        if (a > this.range.a.max) {
-          this.range.a.max = a;
-        } else if (a < this.range.a.min) {
-          this.range.a.min = a;
-        }
+    const a_grid: Float32Array = new Float32Array(width * height);
+    const h_grid: Float32Array = new Float32Array(width * height);
 
-        if (h > this.range.h.max) {
-          this.range.h.max = h;
-        } else if (h < this.range.h.min) {
-          this.range.a.min = h;
-        }
+    for (let i = 0; i < height * width; i++) {
+      const a = aa * rng();
+      const h = hh * rng();
 
-        a_row.push(a);
-        h_row.push(h);
+      if (a > this.range.a.max) {
+        this.range.a.max = a;
+      } else if (a < this.range.a.min) {
+        this.range.a.min = a;
       }
-      a_grid.push(a_row);
-      h_grid.push(h_row);
+
+      if (h > this.range.h.max) {
+        this.range.h.max = h;
+      } else if (h < this.range.h.min) {
+        this.range.a.min = h;
+      }
+
+      a_grid[i] = a;
+      h_grid[i] = h;
     }
 
     return { a: a_grid, h: h_grid };
   }
 
   step(): void {
-    const a_grid = structuredClone(this.grids.a);
-    const h_grid = structuredClone(this.grids.h);
-
     let a_min = Infinity;
     let a_max = -Infinity;
     let h_min = Infinity;
     let h_max = -Infinity;
 
     const { width, height } = this.size;
+    const a_grid = new Float32Array(width * height);
+    const h_grid = new Float32Array(width * height);
+
     const { a: va, h: vh } = this.vars;
 
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {
-        const a = this.grids.a[i][j];
-        const h = this.grids.h[i][j];
+        const a = this.grids.a[i + width * j];
+        const h = this.grids.h[i + width * j];
 
         const LapA = Laplace((x, y) => getPBC(this.grids.a, this.size, x, y));
         const LapH = Laplace((x, y) => getPBC(this.grids.h, this.size, x, y));
@@ -185,8 +181,8 @@ export class ActivInhibRunner implements ActivInhibProps {
           h_max = hh;
         }
 
-        a_grid[i][j] = aa;
-        h_grid[i][j] = hh;
+        a_grid[i + width * j] = aa;
+        h_grid[i + width * j] = hh;
       }
     }
 
@@ -235,7 +231,7 @@ export class ActivInhibRunner implements ActivInhibProps {
 //   size: number;
 //   dt: number;
 //   seed: number;
-//   grids: { a: number[][]; s: number[][]; y: number[][] };
+//   grids: { a: Float32Array; s: Float32Array; y: Float32Array };
 //   vars: fig2_vars_type;
 //   steady: { a: number; s: number; y: number };
 //   fluc: number;
