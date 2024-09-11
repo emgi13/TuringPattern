@@ -41,6 +41,16 @@ declare interface AnimalProps extends Runner<AnimalChems, AnimalParams> {
   randProb: number;
 }
 
+declare type DragonflyChems = "a" | "s" | "b" | "h";
+declare type DragonflyParams = "D" | "r" | "s" | "k";
+
+declare interface DragonflyProps
+  extends Runner<DragonflyChems, DragonflyParams> {
+  flucPerc: number;
+  growAfter: number;
+  waitTill: number;
+}
+
 declare interface TuringPatternProps {
   // Frame post processing
   blurRadius: number;
