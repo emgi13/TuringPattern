@@ -107,6 +107,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     const width = p.width / perRow;
     const height = (width * h) / w;
     let i = 0;
+    const texts: { str: string; x: number; y: number }[] = [];
     for (const layer in runner.grids) {
       const y = Math.floor(i / perRow);
       const x = i % perRow;
@@ -117,18 +118,34 @@ class TuringPattern extends React.Component<TuringPatternProps> {
         runner.size,
         runner.range[layer],
       );
+      const w_gap = ((1 - this.props.frameScale) / 2) * width;
+      const h_gap = ((1 - this.props.frameScale) / 2) * height;
       // put the image on the canvas
       p.image(
         img,
-        x * width + ((1 - this.props.frameScale) / 2) * width,
-        y * height + ((1 - this.props.frameScale) / 2) * height,
+        x * width + w_gap,
+        y * height + h_gap,
         width * this.props.frameScale,
         height * this.props.frameScale,
       );
+      texts.push({
+        str: layer,
+        x: (x + 1) * width - w_gap,
+        y: y * height + h_gap,
+      });
       i += 1;
     }
     p.filter(p.BLUR, this.props.blurRadius);
     if (this.props.invert) p.filter(p.INVERT);
+    const text_padding = 2;
+    for (const text of texts) {
+      const text_width = p.textWidth(text.str) + 2 * text_padding;
+      const text_height = p.textSize() + 2 * text_padding;
+      p.fill(0, 0, 0, 150);
+      p.rect(text.x - text_width, text.y, text_width, text_height);
+      p.fill("white");
+      p.text(text.str, text.x - text_padding, text.y + text_padding);
+    }
     if (!runner.active) p.noLoop();
   }
 
@@ -144,6 +161,10 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       p.createCanvas(width, height);
       p.background(0, 0, 0, 0);
       p.frameRate(0);
+      p.fill("white");
+      p.textAlign(p.RIGHT, p.TOP);
+      p.textSize(20);
+      p.stroke(0, 0, 0, 0);
       window.addEventListener("scroll", this.handleScrollDebounced, {
         passive: true,
       });
