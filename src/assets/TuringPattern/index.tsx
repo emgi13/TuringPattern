@@ -47,6 +47,9 @@ class TuringPattern extends React.Component<TuringPatternProps> {
 
   handleTouch() {
     this.runner = this.props.makeRunner();
+    this.active = true;
+    this.p5?.frameRate(this.props.frameRate);
+    this.p5?.loop();
   }
 
   handleScrollDebounced() {
