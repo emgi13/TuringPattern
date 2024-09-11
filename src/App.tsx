@@ -80,7 +80,7 @@ function App() {
           invert
           blurRadius={2}
           frameRate={30}
-          skipFrames={100}
+          skipFrames={50}
           perRow={2}
         />
       </div>
