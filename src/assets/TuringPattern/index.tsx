@@ -26,6 +26,7 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     frameScale: 0.9,
     makeRunner: defaultRunner,
     invert: false,
+    perRow: 1,
   };
   p5ref: React.RefObject<HTMLDivElement>;
   p5: p5 | undefined;
@@ -100,12 +101,15 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   renderFrame() {
     // console.log("render");
     const { runner } = this;
+    const { perRow } = this.props;
     const { width: w, height: h } = runner.size;
     const p = this.p5!;
-    const width = p.width;
+    const width = p.width / perRow;
     const height = (width * h) / w;
     let i = 0;
     for (const layer in runner.grids) {
+      const y = Math.floor(i / perRow);
+      const x = i % perRow;
       // get the image
       const img = makeImage(
         p,
@@ -116,8 +120,8 @@ class TuringPattern extends React.Component<TuringPatternProps> {
       // put the image on the canvas
       p.image(
         img,
-        ((1 - this.props.frameScale) / 2) * width,
-        i * height + ((1 - this.props.frameScale) / 2) * height,
+        x * width + ((1 - this.props.frameScale) / 2) * width,
+        y * height + ((1 - this.props.frameScale) / 2) * height,
         width * this.props.frameScale,
         height * this.props.frameScale,
       );
@@ -131,9 +135,12 @@ class TuringPattern extends React.Component<TuringPatternProps> {
   sketch = (p: p5) => {
     p.setup = () => {
       const { size } = this.runner;
+      const { perRow } = this.props;
       const layers = Object.keys(this.runner.grids).length;
       const width = this.p5ref.current?.offsetWidth || 400;
-      const height = ((width * size.height) / size.width) * layers;
+      const ww = width / perRow;
+      const height =
+        ((ww * size.height) / size.width) * Math.ceil(layers / perRow);
       p.createCanvas(width, height);
       p.background(0, 0, 0, 0);
       p.frameRate(0);

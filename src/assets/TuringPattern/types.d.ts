@@ -61,4 +61,5 @@ declare interface TuringPatternProps {
   // Render Speeds
   frameRate: number;
   skipFrames: number;
+  perRow: number;
 }
