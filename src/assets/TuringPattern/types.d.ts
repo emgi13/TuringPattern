@@ -22,6 +22,7 @@ declare interface Runner<Chemicals extends string, Parameters extends string> {
   stopAfter: number;
   frameNo: number;
   active: boolean;
+  aspectRatio: number;
 }
 
 declare type ActivInhibChems = "a" | "h";

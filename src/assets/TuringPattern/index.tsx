@@ -102,10 +102,9 @@ class TuringPattern extends React.Component<TuringPatternProps> {
     // console.log("render");
     const { runner } = this;
     const { perRow } = this.props;
-    const { width: w, height: h } = runner.size;
     const p = this.p5!;
     const width = p.width / perRow;
-    const height = (width * h) / w;
+    const height = width / runner.aspectRatio;
     let i = 0;
     const texts: { str: string; x: number; y: number }[] = [];
     for (const layer in runner.grids) {

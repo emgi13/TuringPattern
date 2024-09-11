@@ -60,6 +60,7 @@ export class ActivInhibRunner implements ActivInhibProps {
   stopAfter: number;
   frameNo: number;
   active: boolean;
+  aspectRatio: number;
   constructor(params?: Partial<ActivInhibProps>) {
     this.flucPerc = params?.flucPerc || 7;
     this.stopAfter = params?.stopAfter || 2000;
@@ -70,6 +71,7 @@ export class ActivInhibRunner implements ActivInhibProps {
     this.dx = params?.dx || 1;
     this.dt = params?.dt || 1;
     this.profile = params?.profile || false;
+    this.aspectRatio = this.size.width / this.size.height;
     this.vars = params?.vars || _stripes_ai;
     this.range = {
       a: { min: Infinity, max: -Infinity },
@@ -303,6 +305,7 @@ export class AnimalRunner implements AnimalProps {
   stopAfter: number;
   frameNo: number;
   active: boolean;
+  aspectRatio: number;
   constructor(params?: Partial<AnimalProps>) {
     this.stopAfter = params?.stopAfter || 2_500;
     this.frameNo = 0;
@@ -314,6 +317,7 @@ export class AnimalRunner implements AnimalProps {
     this.initConc = params?.initConc || { a: 0, s: 3, y: 0 };
     this.randA = params?.randA || 5;
     this.randProb = params?.randProb || 0.0008;
+    this.aspectRatio = this.size.width / this.size.height;
     this.profile = params?.profile || false;
     this.vars = params?.vars || _giraffe_params;
     this.range = {
@@ -524,6 +528,7 @@ export class DragonflyRunner implements DragonflyProps {
   growAfter: number;
   global_rng: () => number;
   waitTill: number;
+  aspectRatio: number;
   constructor(params?: Partial<DragonflyProps>) {
     this.flucPerc = params?.flucPerc || 7;
     this.stopAfter = params?.stopAfter || 50000;
@@ -538,6 +543,7 @@ export class DragonflyRunner implements DragonflyProps {
     this.growAfter = 500;
     this.waitTill = 16000;
     this.global_rng = rngWithMinMax(this.seed, 0, 1);
+    this.aspectRatio = this.size.width / this.size.height;
     this.range = {
       a: { min: Infinity, max: -Infinity },
       s: { min: Infinity, max: -Infinity },
@@ -729,26 +735,54 @@ export class DragonflyRunner implements DragonflyProps {
     // add row and column at random
 
     if (this.frameNo > this.waitTill && this.frameNo % this.growAfter === 0) {
-      const ww = width + 1;
-      const hh = height + 1;
-      const x = Math.floor(width * this.global_rng());
-      const y = Math.floor(height * this.global_rng());
-      const a_new = new Float32Array(ww * hh);
-      const s_new = new Float32Array(ww * hh);
-      const b_new = new Float32Array(ww * hh);
-      const h_new = new Float32Array(ww * hh);
-      for (let j = 0; j < hh; j++) {
-        for (let i = 0; i < ww; i++) {
-          const ii = i > x ? i - 1 : i;
-          const jj = j > y ? j - 1 : j;
-          a_new[i + j * ww] = a_grid[ii + jj * width];
-          s_new[i + j * ww] = s_grid[ii + jj * width];
-          b_new[i + j * ww] = b_grid[ii + jj * width];
-          h_new[i + j * ww] = h_grid[ii + jj * width];
-        }
+      const currentAspectRatio = width / height;
+      let heightProb;
+      if (currentAspectRatio > this.aspectRatio) {
+        heightProb = 1 / (8 * currentAspectRatio + 1);
+      } else {
+        heightProb = 1 / (currentAspectRatio / 8 + 1);
       }
-      this.grids = { a: a_new, s: s_new, b: b_new, h: h_new };
-      this.size = { width: ww, height: hh };
+      if (this.global_rng() > heightProb) {
+        const ww = width;
+        const hh = height + 1;
+        const y = Math.floor(height * this.global_rng());
+        const a_new = new Float32Array(ww * hh);
+        const s_new = new Float32Array(ww * hh);
+        const b_new = new Float32Array(ww * hh);
+        const h_new = new Float32Array(ww * hh);
+        for (let j = 0; j < hh; j++) {
+          for (let i = 0; i < ww; i++) {
+            const ii = i;
+            const jj = j > y ? j - 1 : j;
+            a_new[i + j * ww] = a_grid[ii + jj * width];
+            s_new[i + j * ww] = s_grid[ii + jj * width];
+            b_new[i + j * ww] = b_grid[ii + jj * width];
+            h_new[i + j * ww] = h_grid[ii + jj * width];
+          }
+        }
+        this.grids = { a: a_new, s: s_new, b: b_new, h: h_new };
+        this.size = { width: ww, height: hh };
+      } else {
+        const ww = width + 1;
+        const hh = height;
+        const x = Math.floor(width * this.global_rng());
+        const a_new = new Float32Array(ww * hh);
+        const s_new = new Float32Array(ww * hh);
+        const b_new = new Float32Array(ww * hh);
+        const h_new = new Float32Array(ww * hh);
+        for (let j = 0; j < hh; j++) {
+          for (let i = 0; i < ww; i++) {
+            const ii = i > x ? i - 1 : i;
+            const jj = j;
+            a_new[i + j * ww] = a_grid[ii + jj * width];
+            s_new[i + j * ww] = s_grid[ii + jj * width];
+            b_new[i + j * ww] = b_grid[ii + jj * width];
+            h_new[i + j * ww] = h_grid[ii + jj * width];
+          }
+        }
+        this.grids = { a: a_new, s: s_new, b: b_new, h: h_new };
+        this.size = { width: ww, height: hh };
+      }
     } else {
       this.grids = { a: a_grid, s: s_grid, b: b_grid, h: h_grid };
     }

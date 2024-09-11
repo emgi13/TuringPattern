@@ -14,18 +14,22 @@ function App() {
       <div id="main">
         <TuringPattern
           makeRunner={() =>
-            new ActivInhibRunner({ vars: ActivInhibParams.spots })
+            new ActivInhibRunner({
+              vars: ActivInhibParams.spots,
+              size: { width: 40, height: 50 },
+            })
           }
           invert
           frameRate={30}
           skipFrames={10}
-          perRow={1}
+          perRow={2}
         />
         <TuringPattern
           makeRunner={() =>
             new ActivInhibRunner({
               vars: ActivInhibParams.stripes,
               stopAfter: 20000,
+              size: { width: 40, height: 50 },
             })
           }
           blurRadius={2}
@@ -35,7 +39,11 @@ function App() {
         />
         <TuringPattern
           makeRunner={() =>
-            new AnimalRunner({ vars: AnimalParams.giraffe, stopAfter: 3000 })
+            new AnimalRunner({
+              vars: AnimalParams.giraffe,
+              stopAfter: 3000,
+              size: { width: 60, height: 120 },
+            })
           }
           invert
           blurRadius={2}
@@ -51,6 +59,7 @@ function App() {
               randProb: 0.004,
               randA: 2,
               initConc: { a: 0, s: 2.5, y: 0 },
+              size: { width: 60, height: 120 },
             })
           }
           invert
@@ -64,9 +73,10 @@ function App() {
             new AnimalRunner({
               vars: AnimalParams.cheetah,
               stopAfter: 2000,
-              randProb: 0.048,
+              randProb: 0.06,
               randA: 2.0,
               initConc: { a: 0, s: 2.5, y: 0 },
+              size: { width: 60, height: 100 },
             })
           }
           invert
@@ -76,7 +86,9 @@ function App() {
           perRow={3}
         />
         <TuringPattern
-          makeRunner={() => new DragonflyRunner()}
+          makeRunner={() =>
+            new DragonflyRunner({ size: { width: 50, height: 30 } })
+          }
           invert
           blurRadius={2}
           frameRate={30}
